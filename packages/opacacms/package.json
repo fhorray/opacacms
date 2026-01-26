@@ -1,0 +1,26 @@
+{
+  "name": "opacacms",
+  "version": "1.0.0",
+  "module": "src/index.ts",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./api": "./src/api.ts",
+    "./admin": "./src/admin/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@nanostores/router": "^1.0.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.6.2",
+    "hono": "^4.11.4",
+    "nanostores": "^1.1.0",
+    "zod": "^4.3.5"
+  }
+}

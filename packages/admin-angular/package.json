@@ -1,0 +1,13 @@
+{
+  "name": "@opacacms/admin-angular",
+  "version": "1.0.0",
+  "type": "module",
+  "peerDependencies": {
+    "@angular/common": "^17 || ^18 || ^19",
+    "@angular/core": "^17 || ^18 || ^19",
+    "@angular/router": "^17 || ^18 || ^19"
+  },
+  "dependencies": {
+    "opacacms": "workspace:*"
+  }
+}

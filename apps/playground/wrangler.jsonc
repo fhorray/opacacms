@@ -1,0 +1,15 @@
+{
+  "name": "my-app",
+  "main": "./worker.js",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buncf",
+      "database_id": "98f34cdc-9e41-45fb-8c3b-a5142f5bc71c"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@apps/playground",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "admin:dev": "bunx --bun vite admin --port 5173",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+  },
+  "dependencies": {
+    "opacacms": "workspace:*",
+    "@opacacms/admin-react": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.59.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "vite": "^6.3.5",
+    "@vitejs/plugin-react": "^4.5.1"
+  }
+}
