@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { OpacaConfig } from '../types';
-import { createAPIRouter } from '../api/router';
+import { createAPIRouter } from '../server/router';
 
 export function createWorkersHandler(config: OpacaConfig) {
   const app = new Hono();

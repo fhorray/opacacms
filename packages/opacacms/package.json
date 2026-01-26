@@ -18,8 +18,11 @@
   "dependencies": {
     "@nanostores/router": "^1.0.0",
     "@types/better-sqlite3": "^7.6.13",
+    "better-auth": "^1.4.17",
     "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.2.3",
     "hono": "^4.11.4",
+    "ky": "^1.14.3",
     "nanostores": "^1.1.0",
     "zod": "^4.3.5"
   }

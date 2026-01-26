@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'bun:test';
-import { createAPIRouter } from '../src/api/router';
+import { createAPIRouter } from '../src/server/router';
 import { SQLiteAdapter } from '../src/db/sqlite';
 import type { OpacaConfig, Collection } from '../src/types';
 
@@ -106,7 +106,7 @@ describe('API Router', () => {
     const res = await newApp.request('/reqposts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ }) // Missing title
+      body: JSON.stringify({}) // Missing title
     });
 
     expect(res.status).toBe(400);

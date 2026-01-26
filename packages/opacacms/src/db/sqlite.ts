@@ -4,7 +4,7 @@ import type { Collection, FindOptions, PaginatedResult } from '../types';
 
 export class SQLiteAdapter extends BaseDatabaseAdapter {
   name = 'sqlite';
-  private db: Database;
+  public readonly db: Database;
 
   constructor(path: string) {
     super();
@@ -80,9 +80,9 @@ export class SQLiteAdapter extends BaseDatabaseAdapter {
       const order = options.sort.startsWith('-') ? 'DESC' : 'ASC';
       sql += ` ORDER BY ${sortField} ${order}`;
     } else {
-        // Default sort by id desc if available, or rowid
-        // Using rowid is safer if ID is not guaranteed but we added ID PRIMARY KEY.
-        sql += ` ORDER BY id DESC`;
+      // Default sort by id desc if available, or rowid
+      // Using rowid is safer if ID is not guaranteed but we added ID PRIMARY KEY.
+      sql += ` ORDER BY id DESC`;
     }
 
     sql += ` LIMIT ? OFFSET ?`;

@@ -3,7 +3,22 @@ import { createSQLiteAdapter } from 'opacacms/server';
 
 export default defineConfig({
   serverURL: 'http://localhost:3000',
-  db: createSQLiteAdapter('./cms.db'),
+  db: createSQLiteAdapter('./cms-2.db'),
+  auth: {
+    trustedOrigins: ['http://localhost:3000', 'http://localhost:5173'],
+    emailAndPassword: {
+      enabled: true,
+    }
+  },
+  access: {
+    roles: {
+      admin: {
+        posts: ['create', 'read', 'update', 'delete'],
+        categories: ['create', 'read', 'update', 'delete'],
+        user: ['create', 'read', 'update', 'delete', 'ban'],
+      }
+    }
+  },
   collections: [
     {
       slug: 'posts',
@@ -13,21 +28,23 @@ export default defineConfig({
         { name: 'author', type: 'text' },
       ],
       timestamps: true,
-      hooks: {
-        beforeCreate: (data) => {
-          console.log('📝 Creating new post:', data.title);
-          return data;
-        }
-      }
     },
     {
       slug: 'categories',
       fields: [
         { name: 'name', type: 'text', required: true, unique: true },
       ]
+    },
+    {
+      slug: "properties",
+      fields: [
+        { name: 'name', type: 'text', required: true, unique: true },
+      ],
+      timestamps: true,
     }
   ],
   admin: {
-    route: '/admin'
+    route: '/admin',
+    userCollection: 'users'
   }
 });

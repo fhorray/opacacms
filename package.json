@@ -1,6 +1,9 @@
 {
   "name": "opacacms-repository",
   "version": "1.0.0",
+  "scripts": {
+    "dev": "bun run --cwd apps/playground dev"
+  },
   "workspaces": [
     "packages/**",
     "apps/**",

@@ -1,4 +1,4 @@
-import type { Collection, DatabaseAdapter } from '../types';
+import type { Collection, DatabaseAdapter, FindOptions, PaginatedResult } from '../types';
 
 /**
  * BaseDatabaseAdapter is an abstract class that implements the DatabaseAdapter interface.
@@ -10,7 +10,7 @@ export abstract class BaseDatabaseAdapter implements DatabaseAdapter {
   abstract disconnect(): Promise<void>;
 
   abstract create<T>(collection: string, data: Partial<T>): Promise<T>;
-  abstract find<T>(collection: string, query?: any): Promise<T[]>;
+  abstract find<T>(collection: string, query?: any, options?: FindOptions): Promise<PaginatedResult<T>>;
   abstract findOne<T>(collection: string, query: any): Promise<T | null>;
   abstract update<T>(collection: string, query: any, data: Partial<T>): Promise<T>;
   abstract delete(collection: string, query: any): Promise<boolean>;

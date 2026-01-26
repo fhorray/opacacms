@@ -1,3 +1,5 @@
+import type { BetterAuthOptions } from "better-auth";
+
 export type FieldType =
   | 'text'
   | 'number'
@@ -50,12 +52,30 @@ export interface Global {
   access?: AccessConfig;
 }
 
-export interface OpacaConfig {
+export interface OpacaConfig<Resource extends string = string> {
   collections: Collection[];
   globals?: Global[];
   db: DatabaseAdapter;
   admin?: AdminConfig;
   serverURL?: string;
+  /**
+   * Better Auth configuration options.
+   * Plugins specified here will be merged with internal plugins (like admin).
+   */
+  auth?: BetterAuthOptions;
+  /**
+   * Role-Based Access Control configuration.
+   */
+  access?: OpacaAccessConfig<Resource>;
+}
+
+export interface OpacaAccessConfig<Resource extends string = string> {
+  /**
+   * Define roles and their permissions.
+   * Key is the role name (e.g., 'editor').
+   * Value is a map of resource names to allowed actions.
+   */
+  roles: Record<string, Partial<Record<Resource | 'user' | 'session', string[]>>>;
 }
 
 export interface AdminConfig {

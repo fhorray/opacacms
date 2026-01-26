@@ -2,7 +2,7 @@ import { serve } from 'bun';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { OpacaConfig } from '../types';
-import { createAPIRouter } from '../api/router';
+import { createAPIRouter } from '../server/router';
 
 export interface NodeServerOptions {
   port?: number;

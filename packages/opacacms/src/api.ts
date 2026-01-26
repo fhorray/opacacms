@@ -1,7 +1,7 @@
 // API-only entry point (runtime agnostic - works in Next.js, Bun, Node, Edge)
-export * from './api/router';
-export * from './api/handlers';
-export * from './api/admin';
+export * from './server/router';
+export * from './server/handlers';
+export * from './server/admin';
 export * from './db/adapter';
 export * from './db/better-sqlite';
 export * from './db/d1';
