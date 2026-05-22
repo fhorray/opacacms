@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "paths": {
+      "opacacms": ["../../package/src/index.ts"],
+      "opacacms/fields": ["../../package/src/fields/index.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

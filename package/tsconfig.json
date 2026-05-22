@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "https://esm.sh/@tiptap/core": ["./node_modules/@tiptap/core"],
+      "https://esm.sh/@tiptap/starter-kit": ["./node_modules/@tiptap/starter-kit"]
+    }
+  },
+  "include": ["src/**/*"]
+}
+
