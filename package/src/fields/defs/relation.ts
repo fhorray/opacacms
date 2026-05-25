@@ -4,14 +4,15 @@ import { registerField } from '../utils';
 
 export interface RelationFieldOptions extends BaseFieldOptions {
   collection: string;
+  hasMany?: boolean;
 }
 
 /**
  * Creates a relation field schema validation referencing another collection.
  */
 export function relation(opts: RelationFieldOptions): z.ZodTypeAny {
-  // Stored as string containing the ID of the referenced document.
-  let schema: z.ZodTypeAny = z.string();
+  // Stored as string containing the ID of the referenced document or array of strings.
+  let schema: z.ZodTypeAny = opts.hasMany ? z.array(z.string()) : z.string();
 
   if (opts.required === false) {
     schema = schema.optional();
@@ -25,8 +26,10 @@ export function relation(opts: RelationFieldOptions): z.ZodTypeAny {
     required: opts.required !== false,
     hidden: opts.hidden,
     readOnly: opts.readOnly,
-    defaultValue: opts.defaultValue,
+    defaultValue: opts.defaultValue ?? (opts.hasMany ? [] : undefined),
     access: opts.access,
     collection: opts.collection,
+    hasMany: opts.hasMany,
   });
 }
+

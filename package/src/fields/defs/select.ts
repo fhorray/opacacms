@@ -4,6 +4,7 @@ import { registerField } from '../utils';
 
 export interface SelectFieldOptions extends BaseFieldOptions {
   options: (string | { label: string; value: string })[];
+  style?: 'checkbox' | 'select';
 }
 
 /**
@@ -32,6 +33,7 @@ export function select(opts: SelectFieldOptions): z.ZodTypeAny {
     defaultValue: opts.defaultValue,
     access: opts.access,
     options: opts.options,
+    style: opts.style,
   });
 }
 
@@ -53,8 +55,9 @@ export function multiselect(opts: SelectFieldOptions): z.ZodTypeAny {
     required: opts.required !== false,
     hidden: opts.hidden,
     readOnly: opts.readOnly,
-    defaultValue: opts.defaultValue,
+    defaultValue: opts.defaultValue ?? [],
     access: opts.access,
     options: opts.options,
+    style: opts.style ?? 'checkbox',
   });
 }

@@ -10,6 +10,8 @@ export interface QueryOptions {
   limit?: number;
   offset?: number;
   sort?: { field: string; direction: 'asc' | 'desc' };
+  locale?: string;
+  draft?: boolean;
 }
 
 export interface Session {
@@ -42,6 +44,14 @@ export interface DatabaseAdapter {
   delete(collection: string, id: string): Promise<void>;
   count(collection: string, query?: QueryOptions): Promise<number>;
 
+  // Globals management
+  findGlobal(slug: string): Promise<Record<string, unknown> | null>;
+  updateGlobal(slug: string, value: Record<string, unknown>): Promise<Record<string, unknown>>;
+
+  // Versions management
+  createVersion(collection: string, documentId: string, version: Record<string, unknown>): Promise<void>;
+  findVersions(collection: string, documentId: string): Promise<Document[]>;
+
   // Session management operations for Oslo.js auth
   createSession(session: Session): Promise<Session>;
   findSession(sessionId: string): Promise<{ session: Session; user: User } | null>;
@@ -58,3 +68,4 @@ export interface DatabaseAdapter {
   syncSchema?(): void;
 }
 export default DatabaseAdapter;
+

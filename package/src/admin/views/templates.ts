@@ -85,6 +85,34 @@ export const LAYOUT_TEMPLATE = `<!DOCTYPE html>
     }
   }
 
+  function addBlockRow(fieldName) {
+    const selector = document.getElementById('select-block-' + fieldName);
+    const container = document.getElementById('array-rows-' + fieldName);
+    if (!selector || !container) return;
+    const blockSlug = selector.value;
+    const template = document.getElementById('template-' + fieldName + '-' + blockSlug);
+    if (!template) return;
+
+    let maxIndex = -1;
+    const rows = container.querySelectorAll('.array-row');
+    rows.forEach(row => {
+      const idx = parseInt(row.getAttribute('data-index') || '-1', 10);
+      if (idx > maxIndex) maxIndex = idx;
+    });
+
+    const nextIndex = maxIndex + 1;
+    const html = template.innerHTML.replace(/__INDEX__/g, nextIndex);
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html.trim();
+    const newRow = tempDiv.firstElementChild;
+    container.appendChild(newRow);
+
+    if (typeof window.initializeAllTiptap === 'function') {
+      window.initializeAllTiptap();
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {

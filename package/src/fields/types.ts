@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -45,7 +47,8 @@ export interface FieldMeta {
     | 'array'
     | 'row'
     | 'tabs'
-    | 'sidebar';
+    | 'sidebar'
+    | 'blocks';
   label?: string;
   placeholder?: string;
   description?: string;
@@ -56,8 +59,12 @@ export interface FieldMeta {
   access?: FieldAccess;
   options?: (string | { label: string; value: string })[];
   collection?: string;
-  shape?: Record<string, any>;
-  tabsShape?: Record<string, Record<string, any>>;
+  hasMany?: boolean;
+  localized?: boolean;
+  style?: 'checkbox' | 'select';
+  blocks?: any[];
+  shape?: Record<string, z.ZodTypeAny>;
+  tabsShape?: Record<string, Record<string, z.ZodTypeAny>>;
 }
 
 export interface BaseFieldOptions {
@@ -69,4 +76,5 @@ export interface BaseFieldOptions {
   readOnly?: boolean;
   defaultValue?: unknown;
   access?: FieldAccess;
+  localized?: boolean;
 }

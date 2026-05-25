@@ -46,4 +46,14 @@ If you are a developer looking to integrate **OpacaCMS** in your own app, check 
 
 👉 [**OpacaCMS Library Integration Guide (package/README.md)**](file:///c:/Users/francy.nobre/Desktop/dev/opacacms/package/README.md)
 
+### 🌟 New Features Added
+- **Local API**: Programmatically query bypassing REST completely.
+- **Globals (Singletons)**: Site settings, header configurations.
+- **Matrix Blocks Layout**: Define reusable component layout schema.
+- **Lifecycle Hooks & Granular Access**: Intercept mutations, functional RBAC.
+- **Drafts & Versions History**: Track revisions and publish states.
+- **Localization (i18n)**: Field-level multi-locale translations.
+- **Enhanced Relations**: Multi-select relationship references (`hasMany`) and automatic population depth.
+
 Happy hacking! 🕶️🔥
+

@@ -7,6 +7,8 @@ import { date } from './defs/date';
 import { richtext } from './defs/richtext';
 import { relation } from './defs/relation';
 import { accordion, group, array, row, tabs, sidebar } from './defs/containers';
+import { blocks } from './defs/blocks';
+import { ui } from './defs/ui';
 import { getFieldMeta, registerField, opacaRegistry } from './utils';
 
 // Combine standard Zod with custom Opaca field creators at runtime
@@ -27,6 +29,8 @@ export const z = {
   row,
   tabs,
   sidebar,
+  blocks,
+  ui,
 };
 
 // Merge type-level exports from Zod into our custom 'z' namespace
@@ -46,3 +50,6 @@ export * from './defs/date';
 export * from './defs/richtext';
 export * from './defs/relation';
 export * from './defs/containers';
+export * from './defs/blocks';
+export * from './defs/ui';
+

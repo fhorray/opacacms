@@ -13,12 +13,46 @@ export class MemoryDatabaseAdapter implements DatabaseAdapter {
   private collections = new Map<string, Document[]>();
   private sessions = new Map<string, Session>();
   private users = new Map<string, User>();
+  private globals = new Map<string, Record<string, unknown>>();
+  private versionsList: Document[] = [];
 
   private getCollectionList(name: string): Document[] {
     if (!this.collections.has(name)) {
       this.collections.set(name, []);
     }
     return this.collections.get(name)!;
+  }
+
+  // --- Globals management ---
+  async findGlobal(slug: string): Promise<Record<string, unknown> | null> {
+    const val = this.globals.get(slug);
+    return val ? { ...val } : null;
+  }
+
+  async updateGlobal(slug: string, value: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const now = new Date().toISOString();
+    const updated = {
+      ...value,
+      updatedAt: now,
+    };
+    this.globals.set(slug, updated);
+    return { ...updated };
+  }
+
+  // --- Versions management ---
+  async createVersion(collection: string, documentId: string, version: Record<string, unknown>): Promise<void> {
+    this.versionsList.push({
+      id: crypto.randomUUID(),
+      collection,
+      documentId,
+      version: JSON.stringify(version),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  async findVersions(collection: string, documentId: string): Promise<Document[]> {
+    return this.versionsList.filter(v => v.collection === collection && v.documentId === documentId);
   }
 
   // --- Collection CRUD operations ---

@@ -1,6 +1,15 @@
 import { eq, and, asc, desc, sql } from 'drizzle-orm';
 import type { DatabaseAdapter, Document, QueryOptions, Session, User } from '../adapter';
-import { adminUsersTable, sessionsTable, CREATE_ADMIN_USERS_TABLE_SQL, CREATE_SESSIONS_TABLE_SQL } from './built-in-tables';
+import {
+  adminUsersTable,
+  sessionsTable,
+  globalsTable,
+  versionsTable,
+  CREATE_ADMIN_USERS_TABLE_SQL,
+  CREATE_SESSIONS_TABLE_SQL,
+  CREATE_GLOBALS_TABLE_SQL,
+  CREATE_VERSIONS_TABLE_SQL,
+} from './built-in-tables';
 import { generateTableSchema } from './schema-gen';
 import { getFieldMeta } from '../../fields/utils';
 import type { z } from 'zod';
@@ -44,6 +53,8 @@ export class SQLiteDrizzleAdapter implements DatabaseAdapter {
     // 1. Ensure built-in tables exist
     this.sqliteDb.exec(CREATE_ADMIN_USERS_TABLE_SQL);
     this.sqliteDb.exec(CREATE_SESSIONS_TABLE_SQL);
+    this.sqliteDb.exec(CREATE_GLOBALS_TABLE_SQL);
+    this.sqliteDb.exec(CREATE_VERSIONS_TABLE_SQL);
 
     // 2. Ensure registered collections tables exist
     for (const [slug, shape] of this.schemaShapes) {
@@ -129,7 +140,7 @@ export class SQLiteDrizzleAdapter implements DatabaseAdapter {
       if (key in data) {
         const meta = getFieldMeta(field);
         if (meta) {
-          const complexTypes = ['accordion', 'group', 'array', 'relation', 'multiselect', 'row', 'tabs', 'sidebar'];
+          const complexTypes = ['accordion', 'group', 'array', 'relation', 'multiselect', 'row', 'tabs', 'sidebar', 'blocks'];
           if (complexTypes.includes(meta.fieldType)) {
             if (typeof data[key] === 'object' && data[key] !== null) {
               serialized[key] = JSON.stringify(data[key]);
@@ -158,7 +169,7 @@ export class SQLiteDrizzleAdapter implements DatabaseAdapter {
       if (key in data && data[key] !== null && data[key] !== undefined) {
         const meta = getFieldMeta(field);
         if (meta) {
-          const complexTypes = ['accordion', 'group', 'array', 'relation', 'multiselect', 'row', 'tabs', 'sidebar'];
+          const complexTypes = ['accordion', 'group', 'array', 'relation', 'multiselect', 'row', 'tabs', 'sidebar', 'blocks'];
           if (complexTypes.includes(meta.fieldType)) {
             if (typeof data[key] === 'string') {
               try {
@@ -405,5 +416,65 @@ export class SQLiteDrizzleAdapter implements DatabaseAdapter {
       .limit(1);
     const count = results[0]?.count ?? 0;
     return count > 0;
+  }
+
+  // --- Globals management ---
+  async findGlobal(slug: string): Promise<Record<string, unknown> | null> {
+    const results = await this.db
+      .select()
+      .from(globalsTable)
+      .where(eq(globalsTable.slug, slug))
+      .limit(1);
+    if (!results[0]) return null;
+    try {
+      return JSON.parse(results[0].value);
+    } catch {
+      return null;
+    }
+  }
+
+  async updateGlobal(slug: string, value: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const now = new Date().toISOString();
+    const serialized = JSON.stringify(value);
+    const existing = await this.findGlobal(slug);
+    if (existing) {
+      await this.db
+        .update(globalsTable)
+        .set({ value: serialized, updatedAt: now })
+        .where(eq(globalsTable.slug, slug));
+    } else {
+      await this.db.insert(globalsTable).values({
+        slug,
+        value: serialized,
+        updatedAt: now,
+      });
+    }
+    return { ...value, updatedAt: now };
+  }
+
+  // --- Versions management ---
+  async createVersion(collection: string, documentId: string, version: Record<string, unknown>): Promise<void> {
+    await this.db.insert(versionsTable).values({
+      id: crypto.randomUUID(),
+      collection,
+      documentId,
+      version: JSON.stringify(version),
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  async findVersions(collection: string, documentId: string): Promise<Document[]> {
+    const results = await this.db
+      .select()
+      .from(versionsTable)
+      .where(and(eq(versionsTable.collection, collection), eq(versionsTable.documentId, documentId)));
+    return results.map((r: any) => ({
+      id: r.id,
+      collection: r.collection,
+      documentId: r.documentId,
+      version: r.version,
+      createdAt: r.createdAt,
+      updatedAt: r.createdAt,
+    }));
   }
 }

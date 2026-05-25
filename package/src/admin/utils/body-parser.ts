@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { getFieldMeta } from '../../fields/utils';
 
 // Helper to set nested value in object/array
-function setPath(obj: any, path: string[], value: any) {
-  let current = obj;
+function setPath(obj: Record<string, unknown> | unknown[], path: string[], value: unknown) {
+  let current: any = obj;
   for (let i = 0; i < path.length; i++) {
     const key = path[i];
     const nextKey = path[i + 1];
@@ -23,8 +23,8 @@ function setPath(obj: any, path: string[], value: any) {
 }
 
 // Helper to get nested value from object/array
-function getPath(obj: any, path: string[]) {
-  let current = obj;
+function getPath(obj: Record<string, unknown> | unknown[], path: string[]): unknown {
+  let current: any = obj;
   for (const key of path) {
     if (current === undefined || current === null) return undefined;
     current = current[key];
@@ -36,8 +36,8 @@ function getPath(obj: any, path: string[]) {
  * Parses flat URL-encoded form data into a nested JSON structure.
  * Coerces types and handles checkboxes missing from POST request payload.
  */
-export function parseFormBody(flatBody: Record<string, any>, schema: z.ZodObject<any>): Record<string, any> {
-  const nestedData: Record<string, any> = {};
+export function parseFormBody(flatBody: Record<string, unknown>, schema: z.ZodObject<z.ZodRawShape>): Record<string, unknown> {
+  const nestedData: Record<string, unknown> = {};
 
   // 1. Convert flat keys (e.g., "seo.metaTitle") to nested properties
   for (const [key, value] of Object.entries(flatBody)) {
@@ -51,24 +51,12 @@ export function parseFormBody(flatBody: Record<string, any>, schema: z.ZodObject
   return nestedData;
 }
 
-function coerceSchema(schema: z.ZodTypeAny, path: string[], nestedData: any) {
+function coerceSchema(schema: any, path: string[], nestedData: Record<string, unknown>) {
   if (!schema) return;
 
   const meta = getFieldMeta(schema);
-  const typeName = schema.constructor?.name;
 
-  // Unwrap wrapper schemas (Optional, Nullable, Default, Effects, etc.)
-  const def = (schema as any)._def;
-  if (def && def.innerType) {
-    coerceSchema(def.innerType, path, nestedData);
-    return;
-  }
-  if (def && def.schema) {
-    coerceSchema(def.schema, path, nestedData);
-    return;
-  }
-
-  // If this schema has custom field metadata, apply coercion
+  // If this schema has custom field metadata, apply coercion first before unwrapping
   if (meta) {
     if (meta.fieldType === 'checkbox') {
       const val = getPath(nestedData, path);
@@ -89,16 +77,46 @@ function coerceSchema(schema: z.ZodTypeAny, path: string[], nestedData: any) {
       }
       return;
     }
+    if (meta.fieldType === 'relation' && meta.hasMany) {
+      const val = getPath(nestedData, path);
+      if (val === undefined || val === null || val === '') {
+        setPath(nestedData, path, []);
+      } else if (!Array.isArray(val)) {
+        setPath(nestedData, path, [val]);
+      }
+      return;
+    }
+    if (meta.fieldType === 'multiselect') {
+      const val = getPath(nestedData, path);
+      if (val === undefined || val === null || val === '') {
+        setPath(nestedData, path, []);
+      } else if (!Array.isArray(val)) {
+        setPath(nestedData, path, [val]);
+      }
+      return;
+    }
+  }
+
+  // Unwrap wrapper schemas (Optional, Nullable, Default, Effects, etc.)
+  const typeName = schema.constructor?.name;
+  const def = (schema as any)._def;
+  if (def && def.innerType) {
+    coerceSchema(def.innerType, path, nestedData);
+    return;
+  }
+  if (def && def.schema) {
+    coerceSchema(def.schema, path, nestedData);
+    return;
   }
 
   // Recurse into containers
   if (typeName === 'ZodObject') {
-    const shape = (schema as z.ZodObject<any>).shape;
+    const shape = (schema as z.ZodObject<z.ZodRawShape>).shape;
     for (const key of Object.keys(shape)) {
       coerceSchema(shape[key], [...path, key], nestedData);
     }
   } else if (typeName === 'ZodArray') {
-    const elementSchema = (schema as z.ZodArray<any>).element;
+    const elementSchema = (schema as z.ZodArray<any>).element as z.ZodTypeAny;
     const arrayVal = getPath(nestedData, path);
     if (Array.isArray(arrayVal)) {
       for (let i = 0; i < arrayVal.length; i++) {
@@ -107,3 +125,4 @@ function coerceSchema(schema: z.ZodTypeAny, path: string[], nestedData: any) {
     }
   }
 }
+

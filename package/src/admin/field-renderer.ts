@@ -18,7 +18,7 @@ function unwrapSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
 }
 
 // Helper to escape HTML tags and quotes to prevent XSS/syntax issues
-export function escapeHtml(str: any): string {
+export function escapeHtml(str: unknown): string {
   if (str === undefined || str === null) return '';
   return String(str)
     .replace(/&/g, '&amp;')
@@ -35,7 +35,7 @@ export function escapeHtml(str: any): string {
 export function renderFieldHtml(
   fieldName: string,
   schema: z.ZodTypeAny,
-  value: any,
+  value: unknown,
   errors: Record<string, string> | undefined,
   relationOptions: Record<string, { label: string; value: string }[]>
 ): string {
@@ -62,7 +62,7 @@ export function renderFieldHtml(
     if (fieldType === 'row') {
       for (const key of Object.keys(shape)) {
         const childName = fieldName ? `${fieldName}.${key}` : key;
-        const childValue = value?.[key];
+        const childValue = (value as Record<string, unknown> | undefined)?.[key];
         childrenHtml += `
           <div class="form-row-item">
             ${renderFieldHtml(childName, shape[key], childValue, errors, relationOptions)}
@@ -78,7 +78,7 @@ export function renderFieldHtml(
 
     for (const key of Object.keys(shape)) {
       const childName = fieldName ? `${fieldName}.${key}` : key;
-      const childValue = value?.[key];
+      const childValue = (value as Record<string, unknown> | undefined)?.[key];
       childrenHtml += renderFieldHtml(childName, shape[key], childValue, errors, relationOptions);
     }
 
@@ -136,7 +136,7 @@ export function renderFieldHtml(
       let tabFieldsHtml = '';
       for (const key of Object.keys(tabFields)) {
         const childName = fieldName ? `${fieldName}.${tabKey}.${key}` : `${tabKey}.${key}`;
-        const childValue = value?.[tabKey]?.[key];
+        const childValue = (value as Record<string, any> | undefined)?.[tabKey]?.[key];
         tabFieldsHtml += renderFieldHtml(childName, tabFields[key], childValue, errors, relationOptions);
       }
 
@@ -208,6 +208,85 @@ export function renderFieldHtml(
       </div>
     `;
   }
+  // Handle blocks layout matrix field
+  if (fieldType === 'blocks') {
+    const blocksList = meta?.blocks || [];
+    const arrayValues = Array.isArray(value) ? value : [];
+    const rowCount = arrayValues.length;
+    let rowsHtml = '';
+
+    for (let i = 0; i < rowCount; i++) {
+      const rowVal = arrayValues[i] || {};
+      const currentBlockType = rowVal.blockType || '';
+      
+      const blockConfig = blocksList.find((b: any) => b.slug === currentBlockType);
+      let blockFieldsHtml = '';
+      if (blockConfig) {
+        const shape = blockConfig.schema.shape || {};
+        for (const key of Object.keys(shape)) {
+          const subName = `${fieldName}.${i}.blockData.${key}`;
+          const childValue = rowVal.blockData?.[key];
+          blockFieldsHtml += renderFieldHtml(subName, shape[key], childValue, errors, relationOptions);
+        }
+      }
+
+      rowsHtml += `
+        <div class="array-row block-row" data-index="${i}" style="border: 1px solid var(--border-color); padding: 16px; margin-bottom: 12px; background-color: rgba(255,255,255,0.02); position: relative;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+            <strong style="text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Block: ${escapeHtml(blockConfig?.label || currentBlockType)}</strong>
+            <input type="hidden" name="${fieldName}.${i}.blockType" value="${escapeHtml(currentBlockType)}" />
+          </div>
+          ${blockFieldsHtml}
+          <button type="button" class="btn btn-danger btn-sm delete-row-btn" onclick="this.closest('.array-row').remove()" style="margin-top: 8px;">Remove Block</button>
+        </div>
+      `;
+    }
+
+    let templatesHtml = '';
+    for (const b of blocksList) {
+      let blockFieldsHtml = '';
+      const shape = b.schema.shape || {};
+      for (const key of Object.keys(shape)) {
+        const subName = `${fieldName}.__INDEX__.blockData.${key}`;
+        blockFieldsHtml += renderFieldHtml(subName, shape[key], undefined, undefined, relationOptions);
+      }
+
+      templatesHtml += `
+        <template id="template-${fieldName}-${b.slug}">
+          <div class="array-row block-row" data-index="__INDEX__" style="border: 1px solid var(--border-color); padding: 16px; margin-bottom: 12px; background-color: rgba(255,255,255,0.02); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+              <strong style="text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Block: ${escapeHtml(b.label || b.slug)}</strong>
+              <input type="hidden" name="${fieldName}.__INDEX__.blockType" value="${escapeHtml(b.slug)}" />
+            </div>
+            ${blockFieldsHtml}
+            <button type="button" class="btn btn-danger btn-sm delete-row-btn" onclick="this.closest('.array-row').remove()" style="margin-top: 8px;">Remove Block</button>
+          </div>
+        </template>
+      `;
+    }
+
+    let blockOptionsHtml = '';
+    for (const b of blocksList) {
+      blockOptionsHtml += `<option value="${escapeHtml(b.slug)}">${escapeHtml(b.label || b.slug)}</option>`;
+    }
+
+    return `
+      <div class="form-group array-field-container blocks-field-container" data-field="${fieldName}">
+        <label style="font-weight: 600; margin-bottom: 8px; display: block;">${escapeHtml(labelText)}</label>
+        <div class="array-rows" id="array-rows-${fieldName}">
+          ${rowsHtml}
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+          <select id="select-block-${fieldName}" class="form-select" style="width: auto; background-color: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 4px;">
+            ${blockOptionsHtml}
+          </select>
+          <button type="button" class="btn btn-secondary" onclick="addBlockRow('${fieldName}')">Add Block</button>
+        </div>
+        ${templatesHtml}
+        ${errorText}
+      </div>
+    `;
+  }
 
   // Handle single checkbox field
   if (fieldType === 'checkbox') {
@@ -266,15 +345,64 @@ export function renderFieldHtml(
       optionsHtml += `<option value="${escapeHtml(optVal)}" ${selected}>${escapeHtml(optLabel)}</option>`;
     }
     inputHtml = `<select name="${fieldName}" ${requiredAttr} ${isReadOnly}>${optionsHtml}</select>`;
+  } else if (fieldType === 'multiselect') {
+    const options = meta?.options || [];
+    if (meta?.style === 'select') {
+      let optionsHtml = '';
+      for (const opt of options) {
+        const optVal = typeof opt === 'string' ? opt : opt.value;
+        const optLabel = typeof opt === 'string' ? opt : opt.label;
+        const isSelected = Array.isArray(value)
+          ? value.some(val => String(val) === String(optVal))
+          : String(value) === String(optVal);
+        const selectedAttr = isSelected ? 'selected' : '';
+        optionsHtml += `<option value="${escapeHtml(optVal)}" ${selectedAttr}>${escapeHtml(optLabel)}</option>`;
+      }
+      inputHtml = `<select name="${fieldName}" multiple style="min-height: 120px;" ${requiredAttr} ${isReadOnly}>${optionsHtml}</select>`;
+    } else {
+      let checkboxesHtml = '';
+      for (const opt of options) {
+        const optVal = typeof opt === 'string' ? opt : opt.value;
+        const optLabel = typeof opt === 'string' ? opt : opt.label;
+        const isChecked = Array.isArray(value)
+          ? value.some(val => String(val) === String(optVal))
+          : String(value) === String(optVal);
+        const checkedAttr = isChecked ? 'checked' : '';
+        checkboxesHtml += `
+          <label class="multiselect-checkbox-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer;">
+            <input type="checkbox" name="${fieldName}" value="${escapeHtml(optVal)}" ${checkedAttr} ${isReadOnly ? 'disabled' : ''} style="margin: 0;" />
+            <span>${escapeHtml(optLabel)}</span>
+          </label>
+        `;
+      }
+      inputHtml = `
+        <div class="multiselect-checkbox-box" style="border: 1px solid var(--border-color); padding: 12px; border-radius: 4px; background-color: rgba(255,255,255,0.01); max-height: 200px; overflow-y: auto;">
+          ${checkboxesHtml}
+        </div>
+      `;
+    }
   } else if (fieldType === 'relation') {
     const relationSlug = meta?.collection || '';
     const options = relationOptions[relationSlug] || [];
-    let optionsHtml = `<option value="">Select relationship...</option>`;
-    for (const opt of options) {
-      const selected = String(value) === String(opt.value) ? 'selected' : '';
-      optionsHtml += `<option value="${escapeHtml(opt.value)}" ${selected}>${escapeHtml(opt.label)}</option>`;
+    const hasMany = meta?.hasMany === true;
+    let optionsHtml = '';
+    if (!hasMany) {
+      optionsHtml += `<option value="">Select relationship...</option>`;
     }
-    inputHtml = `<select name="${fieldName}" ${requiredAttr} ${isReadOnly}>${optionsHtml}</select>`;
+    for (const opt of options) {
+      let isSelected = false;
+      if (hasMany) {
+        isSelected = Array.isArray(value) 
+          ? value.some(val => String(val) === String(opt.value))
+          : String(value) === String(opt.value);
+      } else {
+        isSelected = String(value) === String(opt.value);
+      }
+      const selectedAttr = isSelected ? 'selected' : '';
+      optionsHtml += `<option value="${escapeHtml(opt.value)}" ${selectedAttr}>${escapeHtml(opt.label)}</option>`;
+    }
+    const multipleAttr = hasMany ? 'multiple style="min-height: 120px;"' : '';
+    inputHtml = `<select name="${fieldName}" ${multipleAttr} ${requiredAttr} ${isReadOnly}>${optionsHtml}</select>`;
   } else if (fieldType === 'number') {
     inputHtml = `<input type="number" name="${fieldName}" value="${value !== undefined && value !== null ? escapeHtml(String(value)) : ''}" ${placeholderAttr} ${requiredAttr} ${isReadOnly} />`;
   } else if (fieldType === 'date') {

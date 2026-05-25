@@ -758,6 +758,149 @@ The `z` namespace from `opacacms/fields` re-exports Zod's `infer`, `ZodTypeAny`,
 
 ---
 
+## 🚀 Advanced Roadmap Features & Enhancements
+
+OpacaCMS includes premium architecture patterns inspired by code-first CMS design principles:
+
+### 1. Local API & Relationship Population Depth
+Interact directly with the database programmatically bypassing HTTP entirely, with support for populating relation fields to any arbitrary nesting level.
+
+```typescript
+import { getPayload } from 'opacacms';
+
+const opaca = await getPayload();
+
+// Querying posts with relationship population depth of 2
+const posts = await opaca.find({
+  collection: 'posts',
+  depth: 2,
+});
+```
+
+### 2. Globals (Singletons)
+Store single instance configurations such as Site Settings, Navigation Menus, and Layout configurations.
+
+```typescript
+import { z } from 'opacacms/fields';
+
+export const SiteSettings = {
+  slug: 'site-settings',
+  label: 'Site Settings',
+  schema: z.object({
+    siteName: z.text({ label: 'Site Name', required: true }),
+    maintenanceMode: z.checkbox({ label: 'Maintenance Mode', defaultValue: false }),
+  })
+};
+
+// Retrieve Site Settings
+const settings = await opaca.findGlobal({ slug: 'site-settings' });
+```
+
+### 3. Blocks Field (Layout Matrix)
+Allow editors to build dynamic page layouts with reusable visual component blocks.
+
+```typescript
+import { z } from 'opacacms/fields';
+
+const Pages = {
+  slug: 'pages',
+  schema: z.object({
+    title: z.text({ required: true }),
+    layout: z.blocks('Layout Matrix', [
+      { slug: 'hero', schema: HeroBlockSchema },
+      { slug: 'quote', schema: QuoteBlockSchema }
+    ])
+  })
+};
+```
+
+### 4. Lifecycle Hooks
+Run asynchronous hooks before or after operations to hash passwords, trigger emails, or synchronize with third-party webhooks.
+
+```typescript
+export const Users = {
+  slug: 'users',
+  schema: userSchema,
+  hooks: {
+    beforeChange: [
+      async ({ data, operation }) => {
+        if (operation === 'create' && data.password) {
+          data.password = await hashPassword(data.password);
+        }
+        return data;
+      }
+    ]
+  }
+};
+```
+
+### 5. Granular Access Control
+Allow functions to return logical boolean criteria or filter constraints to conditionally restrict CRUD operations.
+
+```typescript
+export const Posts = {
+  slug: 'posts',
+  access: {
+    read: () => true,
+    update: ({ user }) => {
+      if (user?.role === 'admin') return true;
+      return { authorId: user?.id }; // restricts update to own posts
+    }
+  }
+};
+```
+
+### 6. Document Versions & Drafts
+Enables rollback history, drafts status (`_status: 'draft' | 'published'`), and version tracking across collection types.
+
+```typescript
+export const Posts = {
+  slug: 'posts',
+  versions: {
+    drafts: true,
+    maxPerDoc: 50,
+  },
+  schema: postSchema,
+};
+```
+
+### 7. Field-Level Localization (i18n)
+Configure specific fields to hold translated content. OpacaCMS automatically resolves values based on requested locales.
+
+```typescript
+const postSchema = z.object({
+  title: z.text({ localized: true }), // Stores localized strings in database
+});
+
+const doc = await opaca.find({ collection: 'posts', locale: 'pt-BR' });
+```
+
+### 8. Custom UI Fields
+Inject custom interface components directly into the admin edit dashboard form layouts.
+
+```typescript
+const orderSchema = z.object({
+  total: z.number(),
+  invoiceButton: z.ui({
+    label: 'Actions',
+    component: 'components/InvoiceButton.tsx'
+  })
+});
+```
+
+### 9. Enhanced Multi-Relation Support
+Relation fields support selecting multiple items concurrently via the `hasMany` configuration flag.
+
+```typescript
+z.relation({
+  label: 'Tags',
+  collection: 'tags',
+  hasMany: true, // Stores reference IDs as array
+})
+```
+
+---
+
 ## 🤝 Contributing
 
 Pull requests are welcome. Keep code comments in English, write tests for new features, and make sure existing tests pass before submitting. Have fun! 🖤

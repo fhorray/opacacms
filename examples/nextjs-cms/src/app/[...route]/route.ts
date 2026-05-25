@@ -9,21 +9,34 @@ const dbFile = 'nextjs_cms.db';
 const sqliteDb = new Database(dbFile);
 const db = drizzle(sqliteDb);
 
-// Define posts collection fields shape
+// Define posts collection fields shape with localization support
 const postsShape = {
-  title: z.text({ label: 'Title', required: true }),
+  title: z.text({ label: 'Title', required: true, localized: true }),
   content: z.richtext({ label: 'Content' }).optional(),
   featured: z.checkbox({ label: 'Featured', defaultValue: false }),
 };
 
 const app = await new OpacaCMS({
   db: new SQLiteDrizzleAdapter(db, { sqliteDb }),
+  localization: {
+    locales: ['en', 'pt-BR', 'es'],
+    defaultLocale: 'en',
+    fallback: true,
+  },
   collections: [
     {
       slug: 'posts',
       schema: z.object(postsShape),
       icon: "BookOpenIcon",
       label: "Posts",
+      hooks: {
+        beforeChange: [
+          async ({ data, operation }) => {
+            console.log(`[Hooks] Local API or REST hook triggered on ${operation}`);
+            return data;
+          }
+        ]
+      },
       access: {
         read: 'public',
         create: 'authenticated',
@@ -70,13 +83,28 @@ const app = await new OpacaCMS({
         tags: z.multiselect({
           label: 'Multiselect Field',
           options: ['react', 'nextjs', 'hono', 'typescript'],
+          style: "select"
         }).optional(),
         publishedDate: z.date({ label: 'Date Field' }).optional(),
         body: z.richtext({ label: 'Richtext (TipTap) Field' }).optional(),
-        author: z.relation({
-          label: 'Relation Field (Linked to Posts)',
+
+        // Multi-relation support (hasMany)
+        relatedPosts: z.relation({
+          label: 'Linked Posts (hasMany)',
           collection: 'posts',
+          hasMany: true,
           required: false,
+        }),
+
+        // Blocks Pattern matrix layout
+        matrixLayout: z.blocks('Layout Blocks Matrix', [
+          { slug: 'hero', schema: z.object({ title: z.string() }) },
+        ]).optional(),
+
+        // Visual Customization UI Field
+        printAction: z.ui({
+          label: 'Custom Actions Button',
+          component: 'src/admin/components/PrintButton.tsx',
         }),
 
         // Visual containers / Layout rows
@@ -131,6 +159,16 @@ const app = await new OpacaCMS({
       },
     },
   ],
+  globals: [
+    {
+      slug: 'site-settings',
+      label: 'Site Settings',
+      schema: z.object({
+        siteName: z.text({ label: 'Site Name', required: true }),
+        maintenanceMode: z.checkbox({ label: 'Maintenance Mode', defaultValue: false }),
+      })
+    }
+  ],
 }).init();
 
 // Export Next.js App Router handlers
@@ -140,3 +178,4 @@ export const PUT = handle(app);
 export const DELETE = handle(app);
 export const PATCH = handle(app);
 export const OPTIONS = handle(app);
+

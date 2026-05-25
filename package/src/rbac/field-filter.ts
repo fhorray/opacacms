@@ -8,7 +8,7 @@ import { resolveAccess } from './resolver';
  * Strips out fields where the user does not have 'read' permissions.
  */
 export async function filterFieldsForRead(
-  schemaShape: Record<string, z.ZodTypeAny>,
+  schemaShape: Record<string, any>,
   doc: Record<string, any>,
   user: AdminUser | null
 ): Promise<Record<string, any>> {
@@ -63,7 +63,7 @@ export async function filterFieldsForRead(
  * Strips out fields where the user does not have 'update' permissions.
  */
 export async function filterFieldsForWrite(
-  schemaShape: Record<string, z.ZodTypeAny>,
+  schemaShape: Record<string, any>,
   data: Record<string, any>,
   existingDoc: Record<string, any> | undefined,
   user: AdminUser | null
